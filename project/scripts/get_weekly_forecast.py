@@ -1,5 +1,5 @@
 """
-ETL process for getting daily weather forecast over API and load it in PostgreSQL database.
+ETL process for getting thirty days weather forecast over API and load it in PostgreSQL database.
 
 """
 import sys
@@ -17,7 +17,7 @@ API_VERSION = config.API_VERSION
 APP_ID = config.APP_ID
 CURRENT_DATE = datetime.strftime(datetime.now(), '%Y-%m-%d')
 URL_GET_CITY_ID = config.URLS['city_id']
-URL_GET_FORECAST = config.URLS['forecast_day']
+URL_GET_FORECAST = config.URLS['forecast_week']
 
 
 def get_city_id(country, city) -> int:
@@ -56,8 +56,6 @@ def get_weather_forecast(city_id) -> dict:
             }
         ).json()
         extend_params = f"""'id': '{city_id}', 
-                            'units': 'metric', 
-                            'lang': 'en', 
                             'APPID': {APP_ID}"""
 
         log_json_data.log_data(json_data=json_data,
@@ -70,32 +68,25 @@ def get_weather_forecast(city_id) -> dict:
 
 
 def upload_data(data_set, conn, country, city):
-    delete_query = f"""delete from fc_daily_weather 
-                       where  value_day = date'{CURRENT_DATE}' and 
-                              city = '{city}' and
-                              country = '{country}'"""
-    conn.execute(raw_sql=delete_query)
-
     for index, row in data_set.iterrows():
-        insert_query = f"""insert into fc_daily_weather (value_day,
-                                                         country,
-                                                         city,
-                                                         description,
-                                                         temp,
-                                                         pressure,
-                                                         humidity,
-                                                         temp_min,
-                                                         temp_max,
-                                                         source) values ('{row['value_day']}', 
-                                                                         '{row['country']}', 
-                                                                         '{row['city']}',
-                                                                         '{row['description']}', 
-                                                                         '{row['temp']}', 
-                                                                         '{row['pressure']}', 
-                                                                         '{row['humidity']}', 
-                                                                         '{row['temp_min']}',
-                                                                         '{row['temp_max']}',  
-                                                                         '{row['source']}')"""
+        delete_query = f"""delete from fc_weekly_weather 
+                                       where  value_day = date'{row['value_day']}' and 
+                                              city = '{city}' and
+                                              country = '{country}'"""
+        insert_query = f"""insert into fc_weekly_weather (value_day,
+                                                          country,
+                                                          city,
+                                                          temp,
+                                                          pressure,
+                                                          humidity,
+                                                          source) values ('{row['value_day']}', 
+                                                                          '{row['country']}', 
+                                                                          '{row['city']}',
+                                                                          '{row['temp']}', 
+                                                                          '{row['pressure']}', 
+                                                                          '{row['humidity']}', 
+                                                                          '{row['source']}')"""
+        conn.execute(raw_sql=delete_query)
         conn.execute(raw_sql=insert_query)
 
     conn.execute(raw_sql='commit')
@@ -109,28 +100,28 @@ def start_up(country, city):
         data_set = pd.DataFrame(columns=['value_day',
                                          'country',
                                          'city',
-                                         'description',
                                          'temp',
                                          'pressure',
                                          'humidity',
-                                         'temp_min',
-                                         'temp_max',
                                          'source'])
 
-        if json_data['cod'] == 200:
+        if int(json_data['cod']) == 200:
 
-            for i in range(len(json_data['weather'])):
-                temp['value_day'] = CURRENT_DATE
-                temp['country'] = country
-                temp['city'] = city
-                temp['description'] = json_data['weather'][0]['description']
-                temp['temp'] = json_data['main']['temp']
-                temp['pressure'] = json_data['main']['pressure']
-                temp['humidity'] = json_data['main']['humidity']
-                temp['temp_min'] = json_data['main']['temp_min']
-                temp['temp_max'] = json_data['main']['temp_max']
-                temp['source'] = 'openweathermap'
-                data_set = data_set.append(temp, ignore_index=True)
+            for i in range(len(json_data['list'])):
+
+                if str(json_data['list'][i]['dt_txt']).find('15:00:00') >= 0:
+                    temp['value_day'] = datetime.strftime(
+                        datetime.strptime(
+                            json_data['list'][i]['dt_txt'],
+                            '%Y-%m-%d %H:%M:%S'),
+                        '%Y-%m-%d')
+                    temp['country'] = country
+                    temp['city'] = city
+                    temp['temp'] = json_data['list'][i]['main']['temp']
+                    temp['pressure'] = json_data['list'][i]['main']['pressure']
+                    temp['humidity'] = json_data['list'][i]['main']['humidity']
+                    temp['source'] = 'openweathermap'
+                    data_set = data_set.append(temp, ignore_index=True)
 
             connection = postgres_wrapper.PostgresWrapper()
             upload_data(data_set, connection, country, city)
@@ -141,13 +132,6 @@ def start_up(country, city):
                     'api_version': API_VERSION,
                     'code': 200,
                     'issue_date': CURRENT_DATE
-                },
-            'result':
-                {
-                    'country': country,
-                    'city': city,
-                    'description': temp['description'],
-                    'temp': temp['temp']
                 }
         }
     except Exception as e:

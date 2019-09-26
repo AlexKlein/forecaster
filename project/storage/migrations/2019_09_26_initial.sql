@@ -35,3 +35,47 @@ comment on column fc_daily_weather.humidity    is 'Air humidity';
 comment on column fc_daily_weather.temp_min    is 'Minimum daily temperature';
 comment on column fc_daily_weather.temp_max    is 'Maximum daily temperature';
 comment on column fc_daily_weather.source      is 'Source system of data receiving';
+
+create table fc_weekly_weather (value_day   date,
+                                country     varchar(256),
+                                city        varchar(256),
+                                temp        float,
+                                pressure    float,
+                                humidity    float,
+                                source      varchar(256));
+
+comment on table fc_weekly_weather is 'Monthly weather forecast in cities';
+
+comment on column fc_weekly_weather.value_day   is 'Measurement day';
+comment on column fc_weekly_weather.country     is 'Country';
+comment on column fc_weekly_weather.city        is 'City';
+comment on column fc_weekly_weather.temp        is 'Average temperature';
+comment on column fc_weekly_weather.pressure    is 'Atmosphere pressure';
+comment on column fc_weekly_weather.humidity    is 'Air humidity';
+comment on column fc_weekly_weather.source      is 'Source system of data receiving';
+
+create table fc_user_roles (user_role varchar(256),
+                            user_name varchar(256));
+
+comment on table fc_user_roles is 'List of users and roles with access to the application';
+
+comment on column fc_user_roles.user_role is 'User role';
+comment on column fc_user_roles.user_name is 'User Login';
+
+create unique index fc_user_roles_pk on fc_user_roles
+(user_name, user_role);
+
+create table fc_api_task_queue (task_id     varchar(256),
+                                 user_name   varchar(64),
+                                 method      varchar(64),
+                                 task_status varchar(16));
+
+comment on table fc_api_task_queue is 'API task queue';
+
+comment on column fc_api_task_queue.task_id     is 'Unique task key';
+comment on column fc_api_task_queue.user_name   is 'User Login';
+comment on column fc_api_task_queue.method      is 'Launched Application Method';
+comment on column fc_api_task_queue.task_status is 'Task status';
+
+create unique index fc_api_task_queue_pk on fc_api_task_queue
+(task_id);

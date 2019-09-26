@@ -43,10 +43,10 @@ def check_connect():
 
 
 def log_data(json_data, URL, extend):
-    user = 'user_name'
+    user = get_user()
     params = (
         datetime.now(),
-        user,
+        user.get('username'),
         URL,
         extend,
         str(json_data)
