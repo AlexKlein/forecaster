@@ -2,7 +2,7 @@ import os
 
 
 API_VERSION = '0.2'
-APP_ID = ''
+APP_ID = os.getenv('APP_ID')
 PROCESS_POOL = 5
 DATABASES = {
     'PG': {
