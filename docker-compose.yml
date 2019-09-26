@@ -23,6 +23,7 @@ services:
       - POSTGRES_DB=
       - POSTGRES_USER=
       - POSTGRES_PASSWORD=
+      - APP_ID=
       - SECRET_KEY=
       - CLIENT_ID=
       - BASE_URL=
