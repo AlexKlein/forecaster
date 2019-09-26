@@ -1,0 +1,32 @@
+version: "3"
+services:
+  waitfordb:
+    container_name: forecaster-waiter
+    image: dadarek/wait-for-dependencies
+    depends_on:
+      - postgres
+    command: postgres:5432
+  
+  api:
+    image: forecaster:latest
+    container_name: forecaster
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    network_mode: "host"
+    ports:
+      - "8080:8080"
+    depends_on:
+      - waitfordb
+    environment:
+      - POSTGRES_HOST=
+      - POSTGRES_DB=
+      - POSTGRES_USER=
+      - POSTGRES_PASSWORD=
+      
+  postgres:
+    container_name: forecaster-db
+    image: postgres:latest
+    network_mode: "host"
+    ports:
+      - "5432:5432"
