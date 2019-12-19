@@ -1,0 +1,16 @@
+serviceName: forecaster
+chartVersion: 2.x
+applications:
+  app:
+    ports:
+    - port: 80
+      protocol: http
+      ingress: true
+    replicas: 1
+    containers:
+      app:
+        image: hub.docker.com/repository/docker/developeralexklein/forecaster
+        imageTag: latest
+        resources:
+          requests: {memory: "50Mi", cpu: "0.01"}
+          limits: {memory: "700Mi", cpu: "1"}
