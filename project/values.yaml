@@ -2,11 +2,12 @@ serviceName: forecaster
 chartVersion: 2.x
 applications:
   app:
+    externalIp: true
     ports:
     - port: 80
       protocol: http
       ingress: true
-    replicas: 1
+    replicas: 2
     containers:
       app:
         image: hub.docker.com/repository/docker/developeralexklein/forecaster
@@ -14,3 +15,15 @@ applications:
         resources:
           requests: {memory: "50Mi", cpu: "0.01"}
           limits: {memory: "700Mi", cpu: "1"}
+        command: [ "python", "run.py", "start_api", "--host=0.0.0.0 --port=80" ]
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          periodSeconds: 5
+        startupProbe:
+          httpGet:
+            path: /
+            port: 80
+          failureThreshold: 30
+          periodSeconds: 10
